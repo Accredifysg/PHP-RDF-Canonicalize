@@ -11,3 +11,6 @@ composer.lock
 
 # Local-only planning doc — kept out of VCS deliberately.
 /docs/CONFORMANCE_ROADMAP.md
+
+# Local reference material (downloaded W3C specs) — not part of the package.
+/REFERENCES/
