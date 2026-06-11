@@ -7,6 +7,45 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-06-11
+
+Internal structure + an opt-in hash profile. **The default (SHA-256) canonical
+output is unchanged and byte-for-byte identical to 0.1.0** — the parity lock and
+the W3C SHA-256 cases stay green.
+
+### Added
+
+- `hashAlgorithm` constructor option on `RDFC10` (default `'sha256'`). It
+  selects the digest used throughout canonicalization; pass `'sha384'` for the
+  RDFC-1.0 optional profile. Any algorithm reported by `hash_algos()` is
+  accepted; anything else throws `InvalidArgumentException`. This closes the W3C
+  `#test075c` / `#test075m` SHA-384 conformance gap.
+- `NQuadsParser` and `NQuadsSerializer` — the N-Quads I/O, extracted from
+  `RDFC10` into dedicated, reusable classes. `RDFC10` composes them and accepts
+  custom instances via its constructor. The known N-Quads conformance gaps now
+  live in `NQuadsParser`/`NQuadsSerializer`, isolated from the algorithm.
+
+### Changed
+
+- `RDFC10` constructor: the internal `MessageDigest` injection parameter is
+  replaced by `hashAlgorithm` (string) plus optional `NQuadsParser` /
+  `NQuadsSerializer` parameters. (Unpublished 0.1.0 → no external impact.)
+
+### W3C conformance
+
+```
+            v0.1.0      v0.2.0
+Eval:       60 / 64     61 / 64    (+1 SHA-384)
+Map:        20 / 21     21 / 21    (+1 SHA-384 — now 100%)
+Negative:    1 /  1      1 /  1
+Total:      81 / 86     83 / 86
+```
+
+Remaining gaps (recorded, not fixed — changing output needs owner sign-off +
+coordinated VC fixture regeneration): `#test060c` (full N-Quads `ECHAR`/`UCHAR`
+escaping) and `#test076c` / `#test077c` (duplicate-quad removal). Neither is
+reachable through VC's php-json-ld `toRdf` pipeline.
+
 ## [0.1.0] - 2026-06-11
 
 First release. Extracts the RDF Dataset Canonicalization (RDFC-1.0)

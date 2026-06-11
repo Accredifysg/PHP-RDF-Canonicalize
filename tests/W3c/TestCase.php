@@ -38,6 +38,7 @@ final class TestCase
         public readonly string $type,
         public readonly string $rawType,
         public readonly string $complexity,
+        public readonly string $hashAlgorithm,
         public readonly string $actionPath,
         public readonly ?string $resultPath,
     ) {}

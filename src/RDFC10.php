@@ -6,6 +6,7 @@ namespace Accredify\RdfCanonicalize;
 
 use Accredify\RdfCanonicalize\Contracts\Canonicalizer;
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Implementation of the RDF Dataset Canonicalization Algorithm (RDFC-1.0).
@@ -27,18 +28,35 @@ class RDFC10 implements Canonicalizer
 
     private MessageDigest $messageDigest;
 
+    private readonly NQuadsParser $parser;
+
+    private readonly NQuadsSerializer $serializer;
+
     private IdentifierIssuer $canonicalIssuer;
 
     /**
      * @param  array<string, string>  $canonicalIdMap  Optional seed map of original => canonical identifiers
+     * @param  string  $hashAlgorithm  Hash algorithm for the digests. RDFC-1.0 uses 'sha256'
+     *                                 (the default); 'sha384' is the spec's optional profile. Any
+     *                                 algorithm reported by hash_algos() is accepted.
+     *
+     * @throws InvalidArgumentException If $hashAlgorithm is not supported by ext-hash.
      */
     public function __construct(
         private readonly array $canonicalIdMap = [],
         private readonly int $maxDeepIterations = PHP_INT_MAX,
-        ?MessageDigest $messageDigest = null,
-        ?IdentifierIssuer $canonicalIssuer = null
+        private readonly string $hashAlgorithm = 'sha256',
+        ?NQuadsParser $parser = null,
+        ?NQuadsSerializer $serializer = null,
+        ?IdentifierIssuer $canonicalIssuer = null,
     ) {
-        $this->messageDigest = $messageDigest ?? new MessageDigest('sha256');
+        if (! in_array($hashAlgorithm, hash_algos(), true)) {
+            throw new InvalidArgumentException("Unsupported hash algorithm: {$hashAlgorithm}");
+        }
+
+        $this->messageDigest = new MessageDigest($hashAlgorithm);
+        $this->parser = $parser ?? new NQuadsParser;
+        $this->serializer = $serializer ?? new NQuadsSerializer;
         $this->canonicalIssuer = $canonicalIssuer ?? new IdentifierIssuer('_:c14n', $canonicalIdMap);
     }
 
@@ -69,7 +87,7 @@ class RDFC10 implements Canonicalizer
         $this->canonicalIssuer = new IdentifierIssuer('_:c14n', $this->canonicalIdMap);
 
         // Parse the N-Quads dataset into RdfQuad objects for the algorithm below.
-        $this->quads = $this->parseNQuadsString($input);
+        $this->quads = $this->parser->parse($input);
 
         // Process each quad and collect blank node information
         foreach ($this->quads as $quad) {
@@ -180,7 +198,7 @@ class RDFC10 implements Canonicalizer
             // blank node identifiers using the canonical identifiers
             // previously issued by canonical issuer.
             // Note: We optimize away the copy here.
-            $nQuad = $this->serializeQuadComponents(
+            $nQuad = $this->serializer->serialize(
                 $this->componentWithCanonicalId($quad->subject),
                 $quad->predicate,
                 $this->componentWithCanonicalId($quad->object),
@@ -194,167 +212,6 @@ class RDFC10 implements Canonicalizer
         sort($normalized, SORT_STRING);
 
         return $normalized;
-    }
-
-    /**
-     * Parse N-Quads string into RdfQuad objects
-     *
-     * @param  string  $nquadsString  N-Quads as a single string
-     * @return list<RdfQuad> Array of RdfQuad objects
-     */
-    private function parseNQuadsString(string $nquadsString): array
-    {
-        $quads = [];
-        $lines = explode("\n", trim($nquadsString));
-
-        foreach ($lines as $line) {
-            $line = trim($line);
-            if (empty($line) || str_starts_with($line, '#')) {
-                continue; // Skip empty lines and comments
-            }
-
-            $quad = $this->parseNQuadLine($line);
-            if ($quad) {
-                $quads[] = $quad;
-            }
-        }
-
-        return $quads;
-    }
-
-    /**
-     * Parse a single N-Quad line into an RdfQuad object
-     *
-     * @param  string  $line  N-Quad line
-     * @return RdfQuad|null RdfQuad object or null if parsing fails
-     */
-    private function parseNQuadLine(string $line): ?RdfQuad
-    {
-        // Remove trailing period and whitespace
-        $line = rtrim($line, " .\t\r\n");
-
-        // Split into components (subject, predicate, object, optional graph)
-        $components = $this->splitNQuadLine($line);
-
-        if (count($components) < 3) {
-            return null;
-        }
-
-        try {
-            $subject = $this->parseRdfTerm($components[0]);
-            $predicate = $this->parseRdfTerm($components[1]);
-            $object = $this->parseRdfTerm($components[2]);
-            $graph = isset($components[3]) ? $this->parseRdfTerm($components[3]) : null;
-
-            return new RdfQuad($subject, $predicate, $object, $graph);
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
-    /**
-     * Split N-Quad line into components, handling quoted literals
-     *
-     * @param  string  $line  N-Quad line
-     * @return list<string> Array of components
-     */
-    private function splitNQuadLine(string $line): array
-    {
-        $components = [];
-        $current = '';
-        $inQuotes = false;
-        $escapeNext = false;
-        $length = strlen($line);
-
-        for ($i = 0; $i < $length; $i++) {
-            $char = $line[$i];
-
-            if ($escapeNext) {
-                $current .= $char;
-                $escapeNext = false;
-
-                continue;
-            }
-
-            if ($char === '\\') {
-                $current .= $char;
-                $escapeNext = true;
-
-                continue;
-            }
-
-            if ($char === '"') {
-                $current .= $char;
-                $inQuotes = ! $inQuotes;
-
-                continue;
-            }
-
-            if (! $inQuotes && $char === ' ') {
-                if ($current !== '') {
-                    $components[] = $current;
-                    $current = '';
-                }
-
-                continue;
-            }
-
-            $current .= $char;
-        }
-
-        if ($current !== '') {
-            $components[] = $current;
-        }
-
-        return $components;
-    }
-
-    /**
-     * Parse an RDF term from a string
-     *
-     * @param  string  $term  Term string
-     * @return RdfTerm RdfTerm object
-     */
-    private function parseRdfTerm(string $term): RdfTerm
-    {
-        // Blank node
-        if (str_starts_with($term, '_:')) {
-            return RdfTerm::blankNode($term);
-        }
-
-        // Named node (IRI)
-        if (str_starts_with($term, '<') && str_ends_with($term, '>')) {
-            return RdfTerm::namedNode(substr($term, 1, -1));
-        }
-
-        // Literal
-        if (str_starts_with($term, '"')) {
-            return $this->parseLiteral($term);
-        }
-
-        // Default to named node
-        return RdfTerm::namedNode($term);
-    }
-
-    /**
-     * Parse a literal term
-     *
-     * @param  string  $term  Literal term string
-     * @return RdfTerm RdfTerm object
-     */
-    private function parseLiteral(string $term): RdfTerm
-    {
-        // Pattern: "value"@lang or "value"^^<datatype> or just "value"
-        if (preg_match('/^"([^"]*)"(?:@([a-z]+(?:-[a-z0-9]+)*))?(?:\^\^<([^>]+)>)?$/i', $term, $matches)) {
-            $value = $matches[1];
-            $language = $matches[2] ?? null;
-            $datatype = $matches[3] ?? null;
-
-            return RdfTerm::literal($value, $language, $datatype ? RdfTerm::namedNode($datatype) : null);
-        }
-
-        // Fallback: treat as plain literal
-        return RdfTerm::literal(trim($term, '"'));
     }
 
     /**
@@ -418,20 +275,13 @@ class RDFC10 implements Canonicalizer
 
             // 3.1.1) If any component in quad is a blank node, then serialize it
             // using a special identifier as follows:
-            $copy = [
-                'subject' => null,
-                'predicate' => $quad->predicate,
-                'object' => null,
-                'graph' => null,
-            ];
-
             // 3.1.2) If the blank node's existing identifier matches the reference
             // blank node identifier then use _:a, otherwise, use _:z
-            $copy['subject'] = $this->modifyFirstDegreeComponent($id, $quad->subject);
-            $copy['object'] = $this->modifyFirstDegreeComponent($id, $quad->object);
-            $copy['graph'] = $this->modifyFirstDegreeComponent($id, $quad->graph);
+            $subject = $this->modifyFirstDegreeComponent($id, $quad->subject);
+            $object = $this->modifyFirstDegreeComponent($id, $quad->object);
+            $graph = $this->modifyFirstDegreeComponent($id, $quad->graph);
 
-            $nquads[] = $this->serializeQuad($copy);
+            $nquads[] = $this->serializer->serialize($subject, $quad->predicate, $object, $graph);
         }
 
         // 4) Sort nquads in lexicographical order
@@ -460,76 +310,6 @@ class RDFC10 implements Canonicalizer
         return RdfTerm::blankNode(
             $component->value === $id ? '_:a' : '_:z'
         );
-    }
-
-    /**
-     * @param  array{subject: RdfTerm, predicate: RdfTerm, object: RdfTerm, graph: RdfTerm}  $quad
-     */
-    private static function serializeQuad(array $quad): string
-    {
-        return self::serializeQuadComponents(
-            $quad['subject'],
-            $quad['predicate'],
-            $quad['object'],
-            $quad['graph']
-        );
-    }
-
-    private static function serializeQuadComponents(RdfTerm $s, RdfTerm $p, RdfTerm $o, RdfTerm $g): string
-    {
-        $nquad = '';
-
-        // subject can only be NamedNode or BlankNode
-        $sType = $s->termType;
-        $sValue = $s->value;
-        if ($sType === RdfTerm::NAMED_NODE) {
-            $nquad .= "<{$sValue}>";
-        } else {
-            $nquad .= $sValue;
-        }
-
-        // predicate can only be NamedNode
-        $pValue = $p->value;
-        $nquad .= " <{$pValue}> ";
-
-        // object is NamedNode, BlankNode, or Literal
-        $oType = $o->termType;
-        $oValue = $o->value;
-        $oLanguage = $o->language;
-        if ($oType === RdfTerm::NAMED_NODE) {
-            $nquad .= "<{$oValue}>";
-        } elseif ($oType === RdfTerm::BLANK_NODE) {
-            $nquad .= $oValue;
-        } else {
-            // A Literal always carries a datatype (RdfTerm::literal() defaults
-            // it to xsd:string), so this is never null in practice.
-            assert($o->datatype !== null);
-            $oDatatypeValue = $o->datatype->value;
-
-            $nquad .= "\"{$oValue}\"";
-
-            if ($oLanguage) {
-                $nquad .= "@{$oLanguage}";
-            }
-
-            if ($oDatatypeValue !== RdfTerm::XSD_STRING) {
-                $nquad .= "^^<{$oDatatypeValue}>";
-            }
-        }
-
-        // graph can only be NamedNode or BlankNode (or DefaultGraph, but that
-        // does not add to `nquad`)
-        $gType = $g->termType;
-        $gValue = $g->value;
-        if ($gType === RdfTerm::NAMED_NODE) {
-            $nquad .= " <{$gValue}>";
-        } elseif ($gType === RdfTerm::BLANK_NODE) {
-            $nquad .= " {$gValue}";
-        }
-
-        $nquad .= " .\n";
-
-        return $nquad;
     }
 
     /**
@@ -838,7 +618,7 @@ class RDFC10 implements Canonicalizer
 
     private function createMessageDigest(): MessageDigest
     {
-        return new MessageDigest;
+        return new MessageDigest($this->hashAlgorithm);
     }
 
     /**

@@ -74,13 +74,14 @@ function nqText(string $text): string
 }
 
 it('canonicalizes per the W3C RDFC-1.0 eval manifest', function (TestCase $test) {
-    $actual = implode('', (new RDFC10)->canonicalize($test->loadAction(), ['inputFormat' => 'application/n-quads']));
+    $actual = implode('', (new RDFC10(hashAlgorithm: $test->hashAlgorithm))
+        ->canonicalize($test->loadAction(), ['inputFormat' => 'application/n-quads']));
 
     expect(nqText($actual))->toBe(nqText($test->loadResult()));
 })->with('rdfc10-eval');
 
 it('issues canonical identifiers per the W3C RDFC-1.0 map manifest', function (TestCase $test) {
-    $rdfc10 = new RDFC10;
+    $rdfc10 = new RDFC10(hashAlgorithm: $test->hashAlgorithm);
     $rdfc10->canonicalize($test->loadAction(), ['inputFormat' => 'application/n-quads']);
 
     $map = [];

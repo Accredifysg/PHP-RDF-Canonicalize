@@ -70,6 +70,9 @@ final class Harness
             }
 
             $result = isset($entry['result']) && is_string($entry['result']) ? $entry['result'] : null;
+            $hashAlgorithm = isset($entry['hashAlgorithm']) && is_string($entry['hashAlgorithm'])
+                ? $entry['hashAlgorithm']
+                : null;
 
             yield $id => new TestCase(
                 id: $id,
@@ -79,10 +82,24 @@ final class Harness
                 complexity: isset($entry['computationalComplexity']) && is_string($entry['computationalComplexity'])
                     ? $entry['computationalComplexity']
                     : '',
+                hashAlgorithm: $this->phpHashAlgorithm($hashAlgorithm),
                 actionPath: $this->manifestsRoot.'/'.$action,
                 resultPath: $result !== null ? $this->manifestsRoot.'/'.$result : null,
             );
         }
+    }
+
+    /**
+     * Map a manifest hashAlgorithm (e.g. "SHA384") to the ext-hash algorithm
+     * name RDFC10 expects. Absent => the RDFC-1.0 default, SHA-256.
+     */
+    private function phpHashAlgorithm(?string $manifestValue): string
+    {
+        if ($manifestValue === null || $manifestValue === '') {
+            return 'sha256';
+        }
+
+        return strtolower(str_replace('-', '', $manifestValue));
     }
 
     private function shortType(string $rawType): ?string

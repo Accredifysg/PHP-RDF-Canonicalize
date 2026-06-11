@@ -47,26 +47,28 @@ composer test:all   # both
 > every platform. (Set `git -C tests/w3c config core.autocrlf false` to keep the
 > working tree byte-faithful.)
 
-## Score (v0.1.0)
+## Score (v0.2.0)
 
 ```
-Eval:          60 / 64 passed
-Map:           20 / 21 passed
+Eval:          61 / 64 passed
+Map:           21 / 21 passed   (100%)
 NegativeEval:   1 /  1 passed
-Total:         81 / 86 passed
+Total:         83 / 86 passed
 ```
 
-The 5 residual failures are **recorded, not fixed**. This package is a frozen
-lift-and-shift whose canonical output backs verifiable-credentials-php
-signatures; changing output to chase conformance needs owner sign-off and a
-coordinated VC fixture regeneration (see the repo README and CHANGELOG). The
-gaps trace to three root causes, none reachable via VC's php-json-ld `toRdf`
-pipeline:
+The harness reads each entry's `hashAlgorithm` and constructs
+`RDFC10(hashAlgorithm: …)`, so the SHA-384 cases (`#test075c` / `#test075m`)
+now pass — that gap was closed in v0.2.0.
+
+The 3 residual failures are **recorded, not fixed**. This package's default
+canonical output backs verifiable-credentials-php signatures; changing it to
+chase conformance needs owner sign-off and a coordinated VC fixture regeneration
+(see the repo README and CHANGELOG). The gaps trace to two root causes, neither
+reachable via VC's php-json-ld `toRdf` pipeline:
 
 | Test(s)                 | Gap                                                        |
 | ----------------------- | ---------------------------------------------------------- |
 | `#test060c`             | full N-Quads `ECHAR`/`UCHAR` escaping not implemented       |
-| `#test075c` `#test075m` | optional SHA-384 profile unsupported (SHA-256 is used)      |
 | `#test076c` `#test077c` | duplicate input quads not removed (RDFC-1.0 dataset is a set)|
 
 Each future conformance PR (once unfrozen) should re-run `composer test:w3c`,

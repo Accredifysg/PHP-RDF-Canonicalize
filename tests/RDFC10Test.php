@@ -85,3 +85,19 @@ it('exposes the original-to-canonical blank node identifier map', function () {
         ->and($map['_:b0'])->toBe('_:c14n0')
         ->and($map['_:b1'])->toBe('_:c14n1');
 });
+
+it('uses SHA-256 by default and threads the hashAlgorithm option', function () {
+    ['input' => $input, 'expected' => $expected] = rdfcFixture('multiple-equivalent-blank-nodes');
+
+    $default = (new RDFC10)->canonicalize($input);
+    $sha384 = (new RDFC10(hashAlgorithm: 'sha384'))->canonicalize($input);
+
+    expect(implode('', $default))->toBe($expected)              // default (SHA-256) path is unchanged
+        ->and($sha384)->not->toBe($default)                     // a different hash changes the labelling
+        ->and($sha384)->toBe((new RDFC10(hashAlgorithm: 'sha384'))->canonicalize($input)); // deterministically
+});
+
+it('rejects an unsupported hash algorithm', function () {
+    expect(fn () => new RDFC10(hashAlgorithm: 'not-a-real-hash'))
+        ->toThrow(InvalidArgumentException::class);
+});
