@@ -1,0 +1,57 @@
+{
+    "name": "accredifysg/php-rdf-canonicalize",
+    "description": "A PHP implementation of the W3C RDF Dataset Canonicalization (RDFC-1.0) algorithm.",
+    "type": "library",
+    "license": "MIT",
+    "homepage": "https://github.com/accredifysg/php-rdf-canonicalize",
+    "keywords": ["rdf", "canonicalization", "rdfc-1.0", "rdfc10", "urdna2015", "n-quads", "nquads", "linked-data", "semantic-web", "w3c"],
+    "autoload": {
+        "psr-4": {
+            "Accredify\\RdfCanonicalize\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Accredify\\RdfCanonicalize\\Tests\\": "tests/"
+        }
+    },
+    "require": {
+        "php": "^8.2",
+        "ext-hash": "*",
+        "ext-mbstring": "*"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.14",
+        "phpstan/phpstan": "^2.1",
+        "laravel/pint": "^1.0"
+    },
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true,
+    "scripts": {
+        "lint": [
+            "@php vendor/bin/pint",
+            "@php vendor/bin/phpstan analyse --no-progress"
+        ],
+        "lint:check": [
+            "@php vendor/bin/pint --test",
+            "@php vendor/bin/phpstan analyse --no-progress"
+        ],
+        "test": [
+            "@php vendor/bin/pest --testsuite=Unit"
+        ],
+        "test:coverage": [
+            "@php vendor/bin/pest --testsuite=Unit --coverage"
+        ],
+        "test:w3c": [
+            "@php vendor/bin/pest --testsuite=W3C"
+        ],
+        "test:all": [
+            "@php vendor/bin/pest"
+        ]
+    }
+}

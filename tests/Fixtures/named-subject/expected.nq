@@ -1,0 +1,2 @@
+<https://example.com/person> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://schema.org/Person> .
+<https://example.com/person> <https://schema.org/name> "Test User" .

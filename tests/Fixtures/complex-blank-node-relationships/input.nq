@@ -1,0 +1,5 @@
+_:b0 <https://schema.org/node1> _:b1 .
+_:b1 <https://schema.org/connects> _:b2 .
+_:b2 <https://schema.org/node2> _:b3 .
+_:b3 <https://schema.org/connects> _:b4 .
+_:b4 <https://schema.org/value> "circular" .

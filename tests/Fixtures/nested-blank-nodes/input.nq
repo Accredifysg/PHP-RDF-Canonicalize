@@ -1,0 +1,5 @@
+_:b0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://schema.org/Person> .
+_:b0 <https://schema.org/address> _:b1 .
+_:b0 <https://schema.org/name> "John Doe" .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://schema.org/PostalAddress> .
+_:b1 <https://schema.org/streetAddress> "123 Main St" .

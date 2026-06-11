@@ -1,0 +1,5 @@
+_:c14n0 <https://schema.org/value> "circular" .
+_:c14n1 <https://schema.org/node1> _:c14n2 .
+_:c14n2 <https://schema.org/connects> _:c14n4 .
+_:c14n3 <https://schema.org/connects> _:c14n0 .
+_:c14n4 <https://schema.org/node2> _:c14n3 .

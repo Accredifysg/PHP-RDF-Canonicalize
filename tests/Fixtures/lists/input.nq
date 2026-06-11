@@ -1,0 +1,7 @@
+_:b0 <https://schema.org/itemList> _:b1 .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "item1" .
+_:b1 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:b2 .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "item2" .
+_:b2 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> _:b3 .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#first> "item3" .
+_:b3 <http://www.w3.org/1999/02/22-rdf-syntax-ns#rest> <http://www.w3.org/1999/02/22-rdf-syntax-ns#nil> .

@@ -1,0 +1,3 @@
+_:b0 <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> <https://schema.org/Person> .
+_:b0 <https://schema.org/email> "john@example.com" .
+_:b0 <https://schema.org/name> "John Doe" .

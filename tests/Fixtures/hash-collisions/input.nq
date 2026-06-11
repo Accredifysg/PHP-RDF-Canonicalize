@@ -1,0 +1,6 @@
+_:b0 <https://schema.org/related> _:b1 .
+_:b0 <https://schema.org/related> _:b2 .
+_:b1 <https://schema.org/link> "B" .
+_:b1 <https://schema.org/value> "A" .
+_:b2 <https://schema.org/link> "A" .
+_:b2 <https://schema.org/value> "B" .
