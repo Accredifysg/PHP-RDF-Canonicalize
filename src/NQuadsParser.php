@@ -140,9 +140,9 @@ class NQuadsParser
             return RdfTerm::blankNode($term);
         }
 
-        // Named node (IRI)
+        // Named node (IRI) — decode any UCHAR escapes to code points.
         if (str_starts_with($term, '<') && str_ends_with($term, '>')) {
-            return RdfTerm::namedNode(substr($term, 1, -1));
+            return RdfTerm::namedNode($this->decodeEscapes(substr($term, 1, -1)));
         }
 
         // Literal
@@ -155,20 +155,120 @@ class NQuadsParser
     }
 
     /**
-     * Parse a literal term.
+     * Parse a literal term: "STRING" optionally followed by @lang or
+     * ^^<datatype>. Scans to the closing quote honouring backslash escapes (so
+     * an escaped \" inside the string does not terminate it), then decodes
+     * the escapes to code points.
      */
     private function parseLiteral(string $term): RdfTerm
     {
-        // Pattern: "value"@lang or "value"^^<datatype> or just "value"
-        if (preg_match('/^"([^"]*)"(?:@([a-z]+(?:-[a-z0-9]+)*))?(?:\^\^<([^>]+)>)?$/i', $term, $matches)) {
-            $value = $matches[1];
-            $language = $matches[2] ?? null;
-            $datatype = $matches[3] ?? null;
+        $length = strlen($term);
+        $raw = '';
+        $i = 1; // skip the opening quote
 
-            return RdfTerm::literal($value, $language, $datatype ? RdfTerm::namedNode($datatype) : null);
+        while ($i < $length) {
+            $char = $term[$i];
+
+            if ($char === '\\' && $i + 1 < $length) {
+                $raw .= $char.$term[$i + 1];
+                $i += 2;
+
+                continue;
+            }
+
+            if ($char === '"') {
+                $i++; // consume the closing quote
+
+                break;
+            }
+
+            $raw .= $char;
+            $i++;
         }
 
-        // Fallback: treat as plain literal
-        return RdfTerm::literal(trim($term, '"'));
+        $value = $this->decodeEscapes($raw);
+
+        // Whatever follows the closing quote is the language tag or datatype.
+        $suffix = substr($term, $i);
+        $language = null;
+        $datatype = null;
+        if (str_starts_with($suffix, '@')) {
+            $language = substr($suffix, 1);
+        } elseif (str_starts_with($suffix, '^^<') && str_ends_with($suffix, '>')) {
+            $datatype = $this->decodeEscapes(substr($suffix, 3, -1));
+        }
+
+        return RdfTerm::literal($value, $language, $datatype !== null ? RdfTerm::namedNode($datatype) : null);
+    }
+
+    /**
+     * Decode N-Quads ECHAR (\t \b \n \r \f \" \' \\) and UCHAR (\uXXXX,
+     * \UXXXXXXXX) escapes into their actual code points (UTF-8). A lone
+     * backslash that matches no escape is kept verbatim.
+     */
+    private function decodeEscapes(string $value): string
+    {
+        $out = '';
+        $length = strlen($value);
+        $i = 0;
+
+        while ($i < $length) {
+            $char = $value[$i];
+
+            if ($char !== '\\' || $i + 1 >= $length) {
+                $out .= $char;
+                $i++;
+
+                continue;
+            }
+
+            $next = $value[$i + 1];
+            switch ($next) {
+                case 't': $out .= "\t";
+                    $i += 2;
+                    break;
+                case 'b': $out .= "\x08";
+                    $i += 2;
+                    break;
+                case 'n': $out .= "\n";
+                    $i += 2;
+                    break;
+                case 'r': $out .= "\r";
+                    $i += 2;
+                    break;
+                case 'f': $out .= "\f";
+                    $i += 2;
+                    break;
+                case '"': $out .= '"';
+                    $i += 2;
+                    break;
+                case "'": $out .= "'";
+                    $i += 2;
+                    break;
+                case '\\': $out .= '\\';
+                    $i += 2;
+                    break;
+                case 'u': $out .= $this->codePoint(substr($value, $i + 2, 4));
+                    $i += 6;
+                    break;
+                case 'U': $out .= $this->codePoint(substr($value, $i + 2, 8));
+                    $i += 10;
+                    break;
+                default: $out .= $char;
+                    $i++; // lone backslash; keep verbatim
+            }
+        }
+
+        return $out;
+    }
+
+    /**
+     * Convert a hex code point (UCHAR payload) to its UTF-8 encoding.
+     */
+    private function codePoint(string $hex): string
+    {
+        // (string) maps a false (out-of-range code point) to '' without an
+        // explicit guard PHPStan would flag as dead.
+        return (string) mb_chr((int) hexdec($hex), 'UTF-8');
     }
 }

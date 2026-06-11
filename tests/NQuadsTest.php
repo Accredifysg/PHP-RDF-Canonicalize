@@ -85,3 +85,38 @@ it('round-trips parse -> serialize for a simple dataset', function () {
 
     expect($out)->toBe($input);
 });
+
+it('decodes UCHAR and ECHAR escapes when parsing a literal', function () {
+    // Single-quoted PHP string so the backslash escapes reach the parser as-is.
+    $quads = (new NQuadsParser)->parse('<http://a> <http://b> "A\U0001F303\tend" .');
+
+    expect($quads[0]->object->value)->toBe("A\u{1F303}\tend");
+});
+
+it('parses an escaped quote inside a literal (regression)', function () {
+    $quads = (new NQuadsParser)->parse('<http://a> <http://b> "say \"hi\"" .');
+
+    expect($quads[0]->object->value)->toBe('say "hi"');
+});
+
+it('emits canonical ECHAR escaping for tab, quote, and backslash', function () {
+    // The \uXXXX path for control code points is exercised exhaustively by the
+    // W3C #test060c conformance case; here we lock the ECHAR substitutions.
+    $line = (new NQuadsSerializer)->serialize(
+        RdfTerm::namedNode('http://a'),
+        RdfTerm::namedNode('http://b'),
+        RdfTerm::literal("a\tb\"c\\d"),
+        RdfTerm::graph(),
+    );
+
+    expect($line)->toBe('<http://a> <http://b> "a\tb\"c\\\\d" .'."\n");
+});
+
+it('round-trips an already-canonical literal through parse then serialize', function () {
+    $input = '<http://a> <http://b> "q=\" bs=\\\\ nl=\n" .'."\n";
+    $quad = (new NQuadsParser)->parse($input)[0];
+
+    $out = (new NQuadsSerializer)->serialize($quad->subject, $quad->predicate, $quad->object, $quad->graph);
+
+    expect($out)->toBe($input);
+});

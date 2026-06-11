@@ -45,7 +45,7 @@ class NQuadsSerializer
             assert($o->datatype !== null);
             $oDatatypeValue = $o->datatype->value;
 
-            $nquad .= "\"{$oValue}\"";
+            $nquad .= '"'.$this->encodeLiteral($oValue).'"';
 
             if ($oLanguage) {
                 $nquad .= "@{$oLanguage}";
@@ -69,5 +69,34 @@ class NQuadsSerializer
         $nquad .= " .\n";
 
         return $nquad;
+    }
+
+    /**
+     * Encode a literal value with the canonical N-Quads escaping (RDF 1.1
+     * canonical form): ECHAR for \b \t \n \f \r \" \\, \uXXXX (uppercase hex)
+     * for the remaining C0 controls and U+007F, raw UTF-8 for everything else
+     * (including C1 controls and beyond).
+     */
+    private function encodeLiteral(string $value): string
+    {
+        $out = '';
+
+        foreach (mb_str_split($value, 1, 'UTF-8') as $char) {
+            $cp = (int) mb_ord($char, 'UTF-8');
+
+            $out .= match (true) {
+                $cp === 0x08 => '\\b',
+                $cp === 0x09 => '\\t',
+                $cp === 0x0A => '\\n',
+                $cp === 0x0C => '\\f',
+                $cp === 0x0D => '\\r',
+                $cp === 0x22 => '\\"',
+                $cp === 0x5C => '\\\\',
+                $cp < 0x20 || $cp === 0x7F => '\\u'.strtoupper(str_pad(dechex($cp), 4, '0', STR_PAD_LEFT)),
+                default => $char,
+            };
+        }
+
+        return $out;
     }
 }
