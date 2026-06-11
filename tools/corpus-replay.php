@@ -15,7 +15,7 @@ use Accredify\RdfCanonicalize\RDFC10;
  * a JSON manifest of {credential: {canon_sha1, nq_dup_lines, ...}}.
  *
  * To compare two package versions (e.g. before/after a conformance fix), run
- * it once per version and diff the manifests — see docs/CONFORMANCE_ROADMAP.md.
+ * it once per version and diff the manifests (see the Usage example below).
  * "byte-identical canon_sha1 across the whole corpus" is the green verdict;
  * any difference is a consensus change that needs owner sign-off + a
  * coordinated VC fixture regeneration.
