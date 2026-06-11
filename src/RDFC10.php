@@ -211,7 +211,10 @@ class RDFC10 implements Canonicalizer
 
         sort($normalized, SORT_STRING);
 
-        return $normalized;
+        // RDFC-1.0 operates on an RDF dataset, which is a set: collapse any
+        // duplicate quads so each statement appears once in the canonical
+        // output (W3C #test076c / #test077c).
+        return array_values(array_unique($normalized));
     }
 
     /**
