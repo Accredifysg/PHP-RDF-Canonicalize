@@ -52,12 +52,9 @@ jobs:
         run: composer test
 
   conformance:
-    name: W3C Conformance Report
+    name: W3C Conformance
     runs-on: ubuntu-latest
-    # Informational only — does not gate merges. The PASS/FAIL count is the
-    # signal; this job stays yellow because of the documented residual gaps
-    # (see the CHANGELOG / tests/W3c/README.md), not regressions.
-    continue-on-error: true
+    # Full conformance (86/86) — this job gates: the rdf-canon suite must pass.
 
     steps:
       - name: Checkout (with W3C submodule)

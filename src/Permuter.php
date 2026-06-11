@@ -5,6 +5,8 @@ namespace Accredify\RdfCanonicalize;
 /**
  * A Permuter iterates over all possible permutations of the given array
  * of elements using the Steinhaus-Johnson-Trotter algorithm.
+ *
+ * @internal Algorithm helper — not part of the package's public API.
  */
 class Permuter
 {

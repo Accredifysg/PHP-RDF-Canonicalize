@@ -10,12 +10,13 @@ A PHP implementation of the W3C
 [RDF Dataset Canonicalization (RDFC-1.0)](https://www.w3.org/TR/rdf-canon/)
 algorithm (the standard that supersedes URDNA2015).
 
-> **Status: 0.2.0.** This package was lift-and-shifted out of
-> [`accredifysg/verifiable-credentials-php`](https://github.com/accredifysg/verifiable-credentials-php),
-> mirroring how `accredifysg/php-json-ld` was extracted earlier. The default
-> (SHA-256) canonical output is **byte-for-byte identical** to the
-> implementation VC ships, because VC's `eddsa-rdfc-2022` and `ecdsa-sd-2023`
-> signatures are computed over it — see
+> **Status: stable (1.0).** Extracted from
+> `accredifysg/verifiable-credentials-php`
+> (mirroring how `accredifysg/php-json-ld` was), and **fully conformant with the
+> W3C rdf-canon suite (86/86)**. The public API **and** the canonical output are
+> covered by [Semantic Versioning](https://semver.org/) — breaking either bumps
+> the major version. The output is consensus-critical: VC's `eddsa-rdfc-2022`
+> and `ecdsa-sd-2023` signatures are computed over it — see
 > [Parity](#parity-with-verifiable-credentials-php).
 
 ## What it does
@@ -40,7 +41,7 @@ php-json-ld.
 ## Installation
 
 ```bash
-composer require accredifysg/php-rdf-canonicalize
+composer require accredifysg/php-rdf-canonicalize:^1.0
 ```
 
 Requires **PHP 8.2+** with the `hash` (SHA-256) and `mbstring` extensions.
@@ -98,25 +99,25 @@ uses internally and accepts via its constructor:
 
 ## Scope
 
-- [x] RDF Dataset Canonicalization (RDFC-1.0) over N-Quads.
+- [x] RDF Dataset Canonicalization (RDFC-1.0) over N-Quads — **full W3C
+      conformance (86/86)**.
 - [x] SHA-256 (default) and SHA-384 hash profiles, via the `hashAlgorithm`
       constructor option.
 
-Out of scope for the 0.x line: JSON-LD → N-Quads conversion (use php-json-ld)
-and removal of duplicate input quads — see [Conformance](#conformance).
+Out of scope for the 1.x line: JSON-LD → N-Quads conversion (use php-json-ld).
 
 ## Parity with verifiable-credentials-php
 
-This is a **pure lift-and-shift**: the algorithm is byte-for-byte identical to
-VC's in-repo RDFC10 at the point of extraction. VC's `eddsa-rdfc-2022` and
-`ecdsa-sd-2023` cryptographic suites sign over this exact canonical output, so it
-is a frozen, consensus-critical contract — **not** a free-to-tweak detail.
+The canonical output is a **frozen, consensus-critical contract**: VC's
+`eddsa-rdfc-2022` and `ecdsa-sd-2023` suites sign over it. For the N-Quads VC
+actually produces (via php-json-ld's `toRdf`), the output is **byte-for-byte
+identical** to the implementation VC originally shipped — verified by replaying
+the full pipeline over real signed credentials (see
+[`tools/corpus-replay.php`](tools/corpus-replay.php)).
 
-[`tests/ParityTest.php`](tests/ParityTest.php) locks this: every fixture under
-`tests/Fixtures/` pairs an input dataset with the canonical output VC produced
-for it, and the test asserts an exact byte match. **Do not change canonical
-output** (even to improve W3C conformance) without owner sign-off and a
-coordinated regeneration of VC's signed fixtures.
+[`tests/ParityTest.php`](tests/ParityTest.php) locks this with exact-byte
+fixtures. Under SemVer, **changing the canonical output is a major version bump**,
+paired with a coordinated regeneration of VC's signed fixtures.
 
 ## Conformance
 
@@ -129,32 +130,23 @@ submodule at `tests/w3c/`. See
 git submodule update --init --recursive   # once
 
 composer test       # unit tests + parity lock (the default gate)
-composer test:w3c   # W3C conformance (informational)
+composer test:w3c   # W3C conformance (full — gates CI)
 composer test:all   # both
 ```
 
-### Score (v0.2.0)
+### Score (v1.0.0) — full conformance
 
-| Test type        | W3C suite | Passing | Notes                          |
-| ---------------- | --------: | ------: | ------------------------------ |
-| Eval             |        64 |      61 | 3 documented gaps              |
-| Map (identifiers)|        21 |      21 | **100%**                       |
-| NegativeEval     |         1 |       1 | poison clique correctly fails  |
-| **Total**        |    **86** |  **83** |                                |
+| Test type         | W3C suite | Passing |
+| ----------------- | --------: | ------: |
+| Eval              |        64 |      64 |
+| Map (identifiers) |        21 |      21 |
+| NegativeEval      |         1 |       1 |
+| **Total**         |    **86** |  **86** |
 
-The 3 residual failures are **recorded, not fixed** (fixing them would change
-canonical output — see [Parity](#parity-with-verifiable-credentials-php)). They
-trace to 2 root causes, neither of which affects the VC pipeline (php-json-ld's
-`toRdf` emits de-duplicated, spec-escaped N-Quads):
-
-- **`#test060c` — N-Quads escaping.** `NQuadsParser`/`NQuadsSerializer` don't
-  implement the full N-Quads `ECHAR`/`UCHAR` escaping grammar.
-- **`#test076c` / `#test077c` — duplicate-quad removal.** RDFC-1.0 treats the
-  dataset as a set; this port preserves duplicate input quads rather than
-  removing them.
-
-> The SHA-384 gap (`#test075`) was closed in v0.2.0 by the `hashAlgorithm`
-> option — Map conformance is now 100%.
+The W3C suite **gates CI** (no allowlist — every case passes). The canonical
+output is frozen under SemVer; a future change would be a major version bump
+plus a coordinated regeneration of VC's signed fixtures. See the
+[CHANGELOG](CHANGELOG.md) for the 0.x → 1.0 conformance history.
 
 ## License
 

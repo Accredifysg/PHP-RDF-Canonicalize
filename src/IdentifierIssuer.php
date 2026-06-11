@@ -6,6 +6,9 @@
 
 namespace Accredify\RdfCanonicalize;
 
+/**
+ * @internal Algorithm helper — not part of the package's public API.
+ */
 class IdentifierIssuer
 {
     /**

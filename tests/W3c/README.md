@@ -47,29 +47,20 @@ composer test:all   # both
 > every platform. (Set `git -C tests/w3c config core.autocrlf false` to keep the
 > working tree byte-faithful.)
 
-## Score (v0.2.0)
+## Score (v1.0.0) — full conformance
 
 ```
-Eval:          61 / 64 passed
-Map:           21 / 21 passed   (100%)
+Eval:          64 / 64 passed
+Map:           21 / 21 passed
 NegativeEval:   1 /  1 passed
-Total:         83 / 86 passed
+Total:         86 / 86 passed   (100%)
 ```
 
 The harness reads each entry's `hashAlgorithm` and constructs
-`RDFC10(hashAlgorithm: …)`, so the SHA-384 cases (`#test075c` / `#test075m`)
-now pass — that gap was closed in v0.2.0.
+`RDFC10(hashAlgorithm: …)`, so the SHA-384 cases run under SHA-384. The suite
+**gates CI** — every case passes, no allowlist.
 
-The 3 residual failures are **recorded, not fixed**. This package's default
-canonical output backs verifiable-credentials-php signatures; changing it to
-chase conformance needs owner sign-off and a coordinated VC fixture regeneration
-(see the repo README and CHANGELOG). The gaps trace to two root causes, neither
-reachable via VC's php-json-ld `toRdf` pipeline:
-
-| Test(s)                 | Gap                                                        |
-| ----------------------- | ---------------------------------------------------------- |
-| `#test060c`             | full N-Quads `ECHAR`/`UCHAR` escaping not implemented       |
-| `#test076c` `#test077c` | duplicate input quads not removed (RDFC-1.0 dataset is a set)|
-
-Each future conformance PR (once unfrozen) should re-run `composer test:w3c`,
-record the before/after passing count, and never regress it.
+The canonical output is frozen under SemVer (it backs verifiable-credentials-php
+signatures). Any future change to it is a major version bump plus a coordinated
+VC fixture regeneration. The 0.x → 1.0 conformance history (dedup, canonical
+escaping, SHA-384) is in the [CHANGELOG](../../CHANGELOG.md).

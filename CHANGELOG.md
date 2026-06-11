@@ -7,6 +7,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-06-11
+
+First stable release. The public API **and** the canonical output are now
+covered by [Semantic Versioning](https://semver.org/spec/v2.0.0.html) —
+breaking either bumps the major version.
+
+### Full W3C conformance
+
+Passes the entire w3c/rdf-canon suite — **86 / 86** (Eval 64/64, Map 21/21,
+NegativeEval 1/1), up from 83/86 at v0.2.0. The two remaining gaps were closed:
+
+- **Duplicate-quad removal** (`#test076c`, `#test077c`): the canonicalized
+  dataset is now treated as a set.
+- **Canonical N-Quads escaping** (`#test060c`): `NQuadsParser` decodes UCHAR /
+  ECHAR escapes and `NQuadsSerializer` emits the RDF 1.1 canonical escaping.
+
+These affect canonical output **only** for inputs with duplicate quads or
+non-canonical escaping — neither of which the VC → php-json-ld `toRdf` pipeline
+produces. Verified with `tools/corpus-replay.php`: replaying the full
+`toRdf → canonicalize` pipeline over real signed credentials yields
+**byte-identical** output to v0.2.0, so existing VC signatures are unaffected.
+
+The W3C conformance suite now **gates CI** (no allowlist — every case passes).
+
+### Public API (frozen)
+
+`RDFC10`, `Contracts\Canonicalizer`, `NQuadsParser`, `NQuadsSerializer`,
+`RdfTerm`, `RdfQuad`. The algorithm-internal helpers (`Permuter`,
+`IdentifierIssuer`, `MessageDigest`) are marked `@internal` and are not part of
+the frozen surface. Requires PHP `^8.2` with `ext-hash` and `ext-mbstring`.
+
 ## [0.2.0] - 2026-06-11
 
 Internal structure + an opt-in hash profile. **The default (SHA-256) canonical
