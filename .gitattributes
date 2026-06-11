@@ -27,4 +27,5 @@
 /phpstan.neon.dist export-ignore
 /phpunit.xml      export-ignore
 /tests            export-ignore
+/docs             export-ignore
 /REFERENCES       export-ignore
