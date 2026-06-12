@@ -1,0 +1,30 @@
+# Dependabot keeps dev deps, CI actions, and the W3C test-suite submodule current.
+# Bumps arrive as reviewable PRs that run the full matrix (incl. the gating W3C
+# conformance job) before merge, instead of CI floating to latest and breaking
+# on an unrelated push.
+version: 2
+updates:
+  - package-ecosystem: "composer"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
+
+  # tests/w3c -> github.com/w3c/rdf-canon (the conformance test suite)
+  - package-ecosystem: "gitsubmodule"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    labels:
+      - "dependencies"
