@@ -1,10 +1,10 @@
 # PHP-RDF-Canonicalize
 
-<!-- Badges (placeholders — wired up when the repo is published) -->
-<!-- ![CI](https://img.shields.io/github/actions/workflow/status/accredifysg/php-rdf-canonicalize/ci.yml?branch=main) -->
-<!-- ![Packagist Version](https://img.shields.io/packagist/v/accredifysg/php-rdf-canonicalize) -->
-<!-- ![PHP Version](https://img.shields.io/packagist/php-v/accredifysg/php-rdf-canonicalize) -->
-<!-- ![License](https://img.shields.io/packagist/l/accredifysg/php-rdf-canonicalize) -->
+![CI](https://img.shields.io/github/actions/workflow/status/accredifysg/php-rdf-canonicalize/ci.yml?branch=main)
+![Packagist Version](https://img.shields.io/packagist/v/accredifysg/php-rdf-canonicalize)
+![PHP Version](https://img.shields.io/packagist/php-v/accredifysg/php-rdf-canonicalize)
+![License](https://img.shields.io/packagist/l/accredifysg/php-rdf-canonicalize)
+![W3C rdf-canon](https://img.shields.io/badge/W3C%20rdf--canon-86%2F86-brightgreen)
 
 A PHP implementation of the W3C
 [RDF Dataset Canonicalization (RDFC-1.0)](https://www.w3.org/TR/rdf-canon/)
