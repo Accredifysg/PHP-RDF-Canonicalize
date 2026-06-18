@@ -121,8 +121,29 @@ jobs:
   sonar:
     name: SonarQube Analysis
     needs: coverage
-    uses: Accredifysg/Accredify-Github-Workflows/.github/workflows/sonar-scan.yml@v2.0.0
-    with:
-      backend-coverage-artifact-name: ${{ needs.coverage.outputs.backend-coverage-artifact-name }}
-      backend-junit-artifact-name: ${{ needs.coverage.outputs.backend-junit-artifact-name }}
-    secrets: inherit
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history for SCM blame
+
+      - name: Download Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.coverage.outputs.backend-coverage-artifact-name }}
+          path: coverage_BE
+
+      - name: Download JUnit Report
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.coverage.outputs.backend-junit-artifact-name }}
+          path: junit_BE
+
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v8.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
