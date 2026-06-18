@@ -75,3 +75,54 @@ jobs:
 
       - name: Run W3C RDFC-1.0 test suite
         run: composer test:w3c
+
+  coverage:
+    name: Coverage
+    runs-on: ubuntu-latest
+    outputs:
+      backend-coverage-artifact-name: coverage-report
+      backend-junit-artifact-name: junit-report
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.3'
+          extensions: hash, mbstring
+          coverage: pcov
+          tools: composer:v2
+
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-interaction --no-progress
+
+      - name: Generate code coverage
+        run: ./vendor/bin/pest --testsuite=Unit --coverage-clover=coverage/clover.xml --log-junit=coverage/junit.xml
+
+      - name: Normalize report paths
+        run: sed -i "s|${GITHUB_WORKSPACE}/||g" coverage/clover.xml coverage/junit.xml
+
+      - name: Upload Coverage Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/clover.xml
+          if-no-files-found: error
+
+      - name: Upload JUnit Report
+        uses: actions/upload-artifact@v4
+        with:
+          name: junit-report
+          path: coverage/junit.xml
+          if-no-files-found: error
+
+  sonar:
+    name: SonarQube Analysis
+    needs: coverage
+    uses: Accredifysg/Accredify-Github-Workflows/.github/workflows/sonar-scan.yml@v2.0.0
+    with:
+      backend-coverage-artifact-name: ${{ needs.coverage.outputs.backend-coverage-artifact-name }}
+      backend-junit-artifact-name: ${{ needs.coverage.outputs.backend-junit-artifact-name }}
+    secrets: inherit
