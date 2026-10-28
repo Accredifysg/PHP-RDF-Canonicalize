@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `NQuadsSerializer` no longer splits each literal into an array of
+  characters to escape it. A credential with a 2 MB embedded PDF peaked at
+  156 MB during verification (over PHP's default 128 MB limit); it now peaks
+  at 32 MB. Canonical output is byte-identical for all valid UTF-8 input:
+  checked over every Unicode scalar value, and the W3C suite still passes
+  86/86. (Ill-formed UTF-8 — which N-Quads does not permit and the VC
+  `json_decode` pipeline cannot produce — previously serialised each invalid
+  sequence as `\u0000`; such input is now rejected, see below.)
+- `RDFC10::canonicalize` no longer serialises the whole dataset into an
+  unused array (`RdfQuad::toString()` per quad) on every call — a dead
+  porting artifact with no counterpart in the rdf-canonize reference
+  implementation. Removes a wasted escape pass per call; peak memory is
+  unchanged.
+
+### Changed
+
+- `NQuadsParser::parse` now throws `InvalidArgumentException` when the input
+  is not valid UTF-8, instead of silently producing undefined output.
+  N-Quads is UTF-8 by definition, so rejected inputs were never valid;
+  accepting them made the canonical hash depend on
+  `mbstring.substitute_character` via `MessageDigest`.
 ### Changed
 
 - The W3C rdf-canon test-suite submodule moved from `tests/w3c/` to

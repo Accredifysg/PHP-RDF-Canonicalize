@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Accredify\RdfCanonicalize;
 
 use Exception;
+use InvalidArgumentException;
 
 /**
  * Parses an RDF dataset serialised as N-Quads into {@see RdfQuad} value objects.
@@ -24,9 +25,19 @@ class NQuadsParser
      *
      * @param  string  $nquads  N-Quads as a single string
      * @return list<RdfQuad>
+     *
+     * @throws InvalidArgumentException if the input is not valid UTF-8
      */
     public function parse(string $nquads): array
     {
+        // N-Quads is UTF-8 by definition. Ill-formed input has no defined
+        // canonical form, and letting raw invalid bytes through would make the
+        // canonical hash depend on mbstring.substitute_character downstream
+        // (MessageDigest), so reject it loudly here.
+        if (! mb_check_encoding($nquads, 'UTF-8')) {
+            throw new InvalidArgumentException('N-Quads input is not valid UTF-8.');
+        }
+
         $quads = [];
         $lines = explode("\n", trim($nquads));
 
