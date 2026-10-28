@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+- The W3C rdf-canon test-suite submodule moved from `tests/w3c/` to
+  `tests/rdf-canon/`. The old path differed from the harness directory
+  (`tests/W3c/`) only by letter case, so on the case-insensitive filesystems
+  macOS and Windows default to the two were the same directory and the
+  submodule could not be checked out locally — the conformance suite only ran
+  in CI. Dev-only; the package contents and canonical output are untouched.
+  Existing checkouts: `git submodule deinit tests/w3c` (if initialised), pull,
+  then `git submodule update --init`.
+
 ## [1.0.0] - 2026-06-11
 
 First stable release. The public API **and** the canonical output are now

@@ -11,9 +11,11 @@ use RuntimeException;
 /**
  * Reads the W3C rdf-canon test manifest and yields the individual test cases.
  *
- * The test suite (tests/w3c/) is a git submodule pointing at
- * https://github.com/w3c/rdf-canon. Its single manifest
- * (tests/w3c/tests/manifest.jsonld) is a JSON-LD document whose `entries`
+ * The test suite (tests/rdf-canon/) is a git submodule pointing at
+ * https://github.com/w3c/rdf-canon. (It deliberately does not live at
+ * tests/w3c/: that collides with this harness directory, tests/W3c/, on
+ * case-insensitive filesystems such as macOS and Windows defaults.) Its single
+ * manifest (tests/rdf-canon/tests/manifest.jsonld) is a JSON-LD document whose `entries`
  * list contains the RDFC-1.0 test cases.
  *
  * This class is intentionally narrow: it just parses the manifest. The actual
@@ -36,7 +38,7 @@ final class Harness
 
     public static function fromDefaultLocation(): self
     {
-        return new self(__DIR__.'/../w3c/tests');
+        return new self(__DIR__.'/../rdf-canon/tests');
     }
 
     /**

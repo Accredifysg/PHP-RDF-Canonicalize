@@ -2,14 +2,19 @@
 
 This directory hosts the harness that runs the official
 [W3C rdf-canon test suite](https://github.com/w3c/rdf-canon) against this
-package. The suite itself is pulled in as a git submodule at `tests/w3c/`
-(lowercase `c`) — these files (uppercase `C`) are the harness that drives it.
+package. The suite itself is pulled in as a git submodule at `tests/rdf-canon/`
+— these files are the harness that drives it.
+
+> The submodule deliberately does **not** live at `tests/w3c/`: that path and
+> this harness directory (`tests/W3c/`) differ only by case, so on the
+> case-insensitive filesystems macOS and Windows default to they are the same
+> directory and the submodule cannot be checked out at all.
 
 ## Layout
 
 ```
 tests/
-├── w3c/                            # submodule: w3c/rdf-canon
+├── rdf-canon/                      # submodule: w3c/rdf-canon
 │   └── tests/
 │       ├── manifest.jsonld         # the single RDFC-1.0 manifest
 │       └── rdfc10/                 # *-in.nq, *-rdfc10.nq, *-rdfc10map.json
@@ -44,7 +49,7 @@ composer test:all   # both
 > **Windows / CRLF note.** The fixtures are committed LF. A Windows checkout
 > with `core.autocrlf=true` rewrites the submodule's `.nq` files to CRLF; the
 > eval harness normalises CRLF→LF before comparing, so the score is the same on
-> every platform. (Set `git -C tests/w3c config core.autocrlf false` to keep the
+> every platform. (Set `git -C tests/rdf-canon config core.autocrlf false` to keep the
 > working tree byte-faithful.)
 
 ## Score (v1.0.0) — full conformance
