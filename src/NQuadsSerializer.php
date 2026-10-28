@@ -76,6 +76,12 @@ class NQuadsSerializer
      * canonical form): ECHAR for \b \t \n \f \r \" \\, \uXXXX (uppercase hex)
      * for the remaining C0 controls and U+007F, raw UTF-8 for everything else
      * (including C1 controls and beyond).
+     *
+     * This is a regex implementation of the shared escape table
+     * {@see RdfTerm::CANONICAL_LITERAL_ESCAPES} (kept as a single
+     * preg_replace_callback pass for memory reasons — see PR #28). Any change
+     * here needs the mirrored change there; tests/NQuadsTest.php pins the two
+     * byte-identical.
      */
     private function encodeLiteral(string $value): string
     {

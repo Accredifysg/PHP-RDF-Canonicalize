@@ -22,6 +22,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   porting artifact with no counterpart in the rdf-canonize reference
   implementation. Removes a wasted escape pass per call; peak memory is
   unchanged.
+- `RdfQuad::toString()` now emits the canonical N-Quads literal escaping.
+  It previously used its own smaller escape map (only `\"`, `\\`, `\n`,
+  `\r`, `\t`), so a literal containing backspace, form feed, another C0
+  control, or DEL serialised differently from `NQuadsSerializer` — the
+  bytes signatures are computed over. `toString()` is not on the
+  canonicalization path (canonical output is unchanged — the W3C suite and
+  parity fixtures still pass), but downstream code using it for output or
+  debugging now gets the canonical bytes. (#29)
+
+### Added
+
+- `RdfTerm::CANONICAL_LITERAL_ESCAPES`: the canonical literal escape table
+  (ECHAR for `\b` `\t` `\n` `\f` `\r` `\"` `\\`, uppercase `\uXXXX` for the
+  remaining C0 controls and U+007F), now the single source of truth shared
+  by `RdfTerm::toString()` and pinned byte-identical to
+  `NQuadsSerializer`'s escaping — and round-tripped through
+  `NQuadsParser` — by tests. (#29)
 
 ### Changed
 
@@ -30,8 +47,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   N-Quads is UTF-8 by definition, so rejected inputs were never valid;
   accepting them made the canonical hash depend on
   `mbstring.substitute_character` via `MessageDigest`.
-### Changed
-
 - The W3C rdf-canon test-suite submodule moved from `tests/w3c/` to
   `tests/rdf-canon/`. The old path differed from the harness directory
   (`tests/W3c/`) only by letter case, so on the case-insensitive filesystems
