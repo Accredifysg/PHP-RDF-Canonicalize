@@ -5,7 +5,12 @@ All notable changes to `accredifysg/php-rdf-canonicalize` are documented here.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/)
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [1.0.1] - 2026-10-29
+
+Memory fix for large literals plus consolidation of the literal escape
+tables. Canonical output is byte-for-byte unchanged for all valid UTF-8
+input (verified over every Unicode scalar value, the W3C suite 86/86, and
+the VC parity fixtures), so existing signatures are unaffected.
 
 ### Fixed
 
