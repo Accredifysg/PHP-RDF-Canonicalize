@@ -1,6 +1,7 @@
 # PHP-RDF-Canonicalize
 
 ![CI](https://img.shields.io/github/actions/workflow/status/accredifysg/php-rdf-canonicalize/ci.yml?branch=main)
+![Test coverage](coverage/badge.svg)
 ![Packagist Version](https://img.shields.io/packagist/v/accredifysg/php-rdf-canonicalize)
 ![PHP Version](https://img.shields.io/packagist/php-v/accredifysg/php-rdf-canonicalize)
 ![License](https://img.shields.io/packagist/l/accredifysg/php-rdf-canonicalize)
