@@ -79,24 +79,22 @@ class NQuadsSerializer
      */
     private function encodeLiteral(string $value): string
     {
-        $out = '';
-
-        foreach (mb_str_split($value, 1, 'UTF-8') as $char) {
-            $cp = (int) mb_ord($char, 'UTF-8');
-
-            $out .= match (true) {
-                $cp === 0x08 => '\\b',
-                $cp === 0x09 => '\\t',
-                $cp === 0x0A => '\\n',
-                $cp === 0x0C => '\\f',
-                $cp === 0x0D => '\\r',
-                $cp === 0x22 => '\\"',
-                $cp === 0x5C => '\\\\',
-                $cp < 0x20 || $cp === 0x7F => '\\u'.strtoupper(str_pad(dechex($cp), 4, '0', STR_PAD_LEFT)),
-                default => $char,
-            };
-        }
-
-        return $out;
+        // Every byte matched here is a whole character in valid UTF-8, so a
+        // byte-level match escapes the same characters as a code-point walk,
+        // without splitting a large literal (an embedded PDF) into an array.
+        return preg_replace_callback(
+            '/[\x00-\x1F\x22\x5C\x7F]/',
+            static fn (array $match): string => match ($match[0]) {
+                "\x08" => '\\b',
+                "\t" => '\\t',
+                "\n" => '\\n',
+                "\f" => '\\f',
+                "\r" => '\\r',
+                '"' => '\\"',
+                '\\' => '\\\\',
+                default => sprintf('\\u%04X', ord($match[0])),
+            },
+            $value,
+        ) ?? throw new \RuntimeException(preg_last_error_msg());
     }
 }

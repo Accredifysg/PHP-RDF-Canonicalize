@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+- `NQuadsSerializer` no longer splits each literal into an array of
+  characters to escape it. A credential with a 2 MB embedded PDF peaked at
+  156 MB during verification (over PHP's default 128 MB limit); it now peaks
+  at 32 MB. Canonical output is byte-identical: checked over every Unicode
+  scalar value, and the W3C suite still passes 86/86.
+
 ## [1.0.0] - 2026-06-11
 
 First stable release. The public API **and** the canonical output are now
