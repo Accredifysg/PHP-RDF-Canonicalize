@@ -123,7 +123,7 @@ paired with a coordinated regeneration of VC's signed fixtures.
 
 Tested against the official
 [W3C rdf-canon test suite](https://github.com/w3c/rdf-canon), pulled in as a git
-submodule at `tests/w3c/`. See
+submodule at `tests/rdf-canon/`. See
 [`tests/W3c/README.md`](tests/W3c/README.md) for the harness layout.
 
 ```bash

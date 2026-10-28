@@ -13,6 +13,7 @@
     <testsuite name="Unit">
       <directory suffix="Test.php">./tests</directory>
       <exclude>./tests/W3c</exclude>
+      <exclude>./tests/rdf-canon</exclude>
     </testsuite>
     <testsuite name="W3C">
       <directory suffix="Test.php">./tests/W3c</directory>

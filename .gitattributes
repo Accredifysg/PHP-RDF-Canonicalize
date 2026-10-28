@@ -16,7 +16,7 @@
 
 # Files that don't need to ship in the composer dist tarball.
 # These cut the size of `composer require` downloads significantly,
-# especially the W3C submodule (tests/w3c/).
+# especially the W3C submodule (tests/rdf-canon/).
 /.editorconfig    export-ignore
 /.gitattributes   export-ignore
 /.gitignore       export-ignore
