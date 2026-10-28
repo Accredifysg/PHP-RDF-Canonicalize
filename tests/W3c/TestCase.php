@@ -13,7 +13,7 @@ use RuntimeException;
  * tests/W3c/Algorithms/Rdfc10Test.php, which runs RDFC10 over the action file
  * and compares against the result file pointed to here.
  *
- * The manifest (tests/w3c/tests/manifest.jsonld) entry shape is:
+ * The manifest (tests/rdf-canon/tests/manifest.jsonld) entry shape is:
  *
  *   {
  *     "id": "#test001c",
