@@ -1,0 +1,50 @@
+name: Generate Coverage Badge
+on:
+  workflow_call:
+    inputs:
+      coverage:
+        type: string
+        required: true
+jobs:
+  badge:
+    name: Generate Coverage Badge
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.ref || github.ref }}
+          repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
+
+      # Use the output from the `coverage` step
+      - name: Generate the badge SVG image
+        uses: emibcn/badge-action@f9150fde070fcca0c4e832437611b44838fcd325 # v2.0.4
+        id: badge
+        with:
+          label: 'Test coverage'
+          status: ${{ inputs.coverage }}
+          color: ${{
+            inputs.coverage > 90 && 'green'              ||
+            inputs.coverage > 80 && 'yellow,green'       ||
+            inputs.coverage > 70 && 'yellow'             ||
+            inputs.coverage > 60 && 'orange,yellow'      ||
+            inputs.coverage > 50 && 'orange'             ||
+            inputs.coverage > 40 && 'red,orange'         ||
+            inputs.coverage > 30 && 'red,red,orange'     ||
+            inputs.coverage > 20 && 'red,red,red,orange' ||
+            'red' }}
+          path: "coverage/badge.svg"
+
+      - name: Upload badge as artifact
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: badge
+          path: "coverage/badge.svg"
+          if-no-files-found: error
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
+        with:
+          commit_message: 'ci: update coverage & badge'
+          commit_options: '--no-verify'
