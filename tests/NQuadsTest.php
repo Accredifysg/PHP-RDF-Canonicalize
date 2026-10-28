@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use Accredify\RdfCanonicalize\NQuadsParser;
 use Accredify\RdfCanonicalize\NQuadsSerializer;
+use Accredify\RdfCanonicalize\RdfQuad;
 use Accredify\RdfCanonicalize\RdfTerm;
 
 uses()->group('nquads');
@@ -147,4 +148,70 @@ it('round-trips an already-canonical literal through parse then serialize', func
     $out = (new NQuadsSerializer)->serialize($quad->subject, $quad->predicate, $quad->object, $quad->graph);
 
     expect($out)->toBe($input);
+});
+
+// --- Consolidated escape table (issue #29) -------------------------------
+// RdfTerm::CANONICAL_LITERAL_ESCAPES is the single source of truth for
+// literal escaping. The three tests below pin the three call sites to it:
+// the serializer's regex implementation, RdfQuad::toString(), and the
+// parser's inverse decoding.
+
+it('keeps the shared escape table byte-identical to the serializer', function () {
+    // The table covers exactly the bytes the serializer rewrites: the C0
+    // controls, '"', '\', and DEL.
+    expect(array_keys(RdfTerm::CANONICAL_LITERAL_ESCAPES))
+        ->toBe(array_map('chr', [...range(0x00, 0x1F), 0x22, 0x5C, 0x7F]));
+
+    // And each entry maps to the same bytes the serializer emits.
+    $serializer = new NQuadsSerializer;
+    foreach (RdfTerm::CANONICAL_LITERAL_ESCAPES as $raw => $escaped) {
+        $line = $serializer->serialize(
+            RdfTerm::namedNode('http://a'),
+            RdfTerm::namedNode('http://b'),
+            RdfTerm::literal((string) $raw),
+            RdfTerm::graph(),
+        );
+
+        expect($line)->toBe('<http://a> <http://b> "'.$escaped.'" .'."\n");
+    }
+});
+
+it('escapes RdfQuad::toString() literals identically to the canonical serializer', function () {
+    // Every escapable byte plus raw multi-byte UTF-8 that must pass through,
+    // across the three literal shapes (plain, language-tagged, datatyped).
+    $value = implode('', array_map('chr', [...range(0x00, 0x1F), 0x22, 0x5C, 0x7F])).'héllo✓';
+
+    $literals = [
+        RdfTerm::literal($value),
+        RdfTerm::literal($value, 'en'),
+        RdfTerm::literal($value, null, RdfTerm::namedNode('http://www.w3.org/2001/XMLSchema#integer')),
+    ];
+
+    $serializer = new NQuadsSerializer;
+    foreach ($literals as $object) {
+        $quad = new RdfQuad(
+            RdfTerm::namedNode('http://a'),
+            RdfTerm::namedNode('http://b'),
+            $object,
+        );
+
+        $canonical = $serializer->serialize($quad->subject, $quad->predicate, $quad->object, $quad->graph);
+
+        expect($quad->toString()."\n")->toBe($canonical);
+    }
+});
+
+it('round-trips every escapable byte through serialize then parse', function () {
+    $value = implode('', array_map('chr', [...range(0x00, 0x1F), 0x22, 0x5C, 0x7F])).'héllo✓';
+
+    $line = (new NQuadsSerializer)->serialize(
+        RdfTerm::namedNode('http://a'),
+        RdfTerm::namedNode('http://b'),
+        RdfTerm::literal($value),
+        RdfTerm::graph(),
+    );
+    $quads = (new NQuadsParser)->parse($line);
+
+    expect($quads)->toHaveCount(1)
+        ->and($quads[0]->object->value)->toBe($value);
 });

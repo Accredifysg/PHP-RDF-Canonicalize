@@ -216,6 +216,11 @@ class NQuadsParser
      * Decode N-Quads ECHAR (\t \b \n \r \f \" \' \\) and UCHAR (\uXXXX,
      * \UXXXXXXXX) escapes into their actual code points (UTF-8). A lone
      * backslash that matches no escape is kept verbatim.
+     *
+     * Inverse of the canonical escape table
+     * {@see RdfTerm::CANONICAL_LITERAL_ESCAPES} (plus the non-canonical
+     * escapes \' and \UXXXXXXXX, which the grammar allows on input);
+     * tests/NQuadsTest.php pins the round-trip over every escapable byte.
      */
     private function decodeEscapes(string $value): string
     {

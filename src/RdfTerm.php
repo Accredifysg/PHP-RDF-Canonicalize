@@ -30,6 +30,59 @@ class RdfTerm
 
     public const RDF_SYNTAX_REST = 'http://www.w3.org/1999/02/22-rdf-syntax-ns#rest';
 
+    /**
+     * Canonical N-Quads literal escaping (RDF 1.1 canonical form): ECHAR for
+     * \b \t \n \f \r \" \\, \uXXXX (uppercase hex) for the remaining C0
+     * controls and U+007F. Every other character — including C1 controls and
+     * beyond — passes through as raw UTF-8.
+     *
+     * Single source of truth for literal escaping. The output bytes are
+     * frozen: verifiable-credentials-php's eddsa-rdfc-2022 / ecdsa-sd-2023
+     * signatures sign over them. {@see NQuadsSerializer::encodeLiteral} keeps
+     * its own regex implementation of this table for memory reasons; the two
+     * are pinned byte-identical, and {@see NQuadsParser} pinned as the
+     * inverse, by tests/NQuadsTest.php.
+     *
+     * @var array<string, string>
+     */
+    public const CANONICAL_LITERAL_ESCAPES = [
+        "\x00" => '\u0000',
+        "\x01" => '\u0001',
+        "\x02" => '\u0002',
+        "\x03" => '\u0003',
+        "\x04" => '\u0004',
+        "\x05" => '\u0005',
+        "\x06" => '\u0006',
+        "\x07" => '\u0007',
+        "\x08" => '\b',
+        "\x09" => '\t',
+        "\x0A" => '\n',
+        "\x0B" => '\u000B',
+        "\x0C" => '\f',
+        "\x0D" => '\r',
+        "\x0E" => '\u000E',
+        "\x0F" => '\u000F',
+        "\x10" => '\u0010',
+        "\x11" => '\u0011',
+        "\x12" => '\u0012',
+        "\x13" => '\u0013',
+        "\x14" => '\u0014',
+        "\x15" => '\u0015',
+        "\x16" => '\u0016',
+        "\x17" => '\u0017',
+        "\x18" => '\u0018',
+        "\x19" => '\u0019',
+        "\x1A" => '\u001A',
+        "\x1B" => '\u001B',
+        "\x1C" => '\u001C',
+        "\x1D" => '\u001D',
+        "\x1E" => '\u001E',
+        "\x1F" => '\u001F',
+        '"' => '\"',
+        '\\' => '\\\\',
+        "\x7F" => '\u007F',
+    ];
+
     public function __construct(
         public readonly string $termType,
         public readonly string $value,
@@ -93,12 +146,6 @@ class RdfTerm
 
     private function escapeLiteral(string $value): string
     {
-        return strtr($value, [
-            '\\' => '\\\\',
-            '"' => '\\"',
-            "\n" => '\\n',
-            "\r" => '\\r',
-            "\t" => '\\t',
-        ]);
+        return strtr($value, self::CANONICAL_LITERAL_ESCAPES);
     }
 }
