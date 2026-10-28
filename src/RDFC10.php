@@ -95,10 +95,6 @@ class RDFC10 implements Canonicalizer
             $this->addBlankNodeQuadInfo($quad, $quad->object);
             $this->addBlankNodeQuadInfo($quad, $quad->graph);
         }
-        $quadString = array_map(function (RdfQuad $quad) {
-            return $quad->toString();
-        }, $this->quads);
-
         // Get non-normalized blank nodes
         $hashToBlankNodes = [];
         $nonNormalized = array_keys($this->blankNodeInfo);

@@ -112,6 +112,34 @@ it('emits canonical ECHAR escaping for tab, quote, and backslash', function () {
     expect($line)->toBe('<http://a> <http://b> "a\tb\"c\\\\d" .'."\n");
 });
 
+it('pins the canonical escaping of every escapable byte (frozen output)', function () {
+    // Every byte the serializer rewrites — the C0 controls, '"', '\', DEL —
+    // followed by raw multi-byte UTF-8 that must pass through untouched. The
+    // expected string is spelled out literally: signatures are computed over
+    // these exact bytes, so any drift here is a breaking change.
+    $escapable = implode('', array_map('chr', [...range(0x00, 0x1F), 0x22, 0x5C, 0x7F]));
+
+    $line = (new NQuadsSerializer)->serialize(
+        RdfTerm::namedNode('http://a'),
+        RdfTerm::namedNode('http://b'),
+        RdfTerm::literal($escapable.'héllo✓'),
+        RdfTerm::graph(),
+    );
+
+    expect($line)->toBe(
+        '<http://a> <http://b> "'
+        .'\u0000\u0001\u0002\u0003\u0004\u0005\u0006\u0007\b\t\n\u000B\f\r'
+        .'\u000E\u000F\u0010\u0011\u0012\u0013\u0014\u0015\u0016\u0017'
+        .'\u0018\u0019\u001A\u001B\u001C\u001D\u001E\u001F'
+        .'\"\\\\\u007F'
+        .'héllo✓" .'."\n"
+    );
+});
+
+it('rejects N-Quads input that is not valid UTF-8', function () {
+    (new NQuadsParser)->parse('<http://a> <http://b> "caf'."\xE9".'" .');
+})->throws(InvalidArgumentException::class, 'N-Quads input is not valid UTF-8.');
+
 it('round-trips an already-canonical literal through parse then serialize', function () {
     $input = '<http://a> <http://b> "q=\" bs=\\\\ nl=\n" .'."\n";
     $quad = (new NQuadsParser)->parse($input)[0];
